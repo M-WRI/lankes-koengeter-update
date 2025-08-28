@@ -1,103 +1,225 @@
+"use client";
+
+import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 
-export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+// Dummy data for posts
+const dummyPosts = [
+  {
+    id: 1,
+    title: "Mountain Adventure",
+    images: [
+      "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=600&fit=crop", // Vertical
+      "https://images.unsplash.com/photo-1464822759844-d150baec0134?w=800&h=600&fit=crop", // Wide
+      "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=600&fit=crop", // Vertical
+    ],
+  },
+  {
+    id: 2,
+    title: "City Life",
+    images: [
+      "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800&h=600&fit=crop", // Wide
+      "https://images.unsplash.com/photo-1444723121867-7a241cacace9?w=400&h=600&fit=crop", // Vertical
+      "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800&h=600&fit=crop", // Wide
+    ],
+  },
+  {
+    id: 3,
+    title: "Ocean Views",
+    images: [
+      "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&h=600&fit=crop", // Wide
+      "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=600&fit=crop", // Vertical
+      "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&h=600&fit=crop", // Wide
+    ],
+  },
+  {
+    id: 4,
+    title: "Forest Walk",
+    images: [
+      "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=600&fit=crop", // Vertical
+      "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop", // Wide
+      "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=600&fit=crop", // Vertical
+    ],
+  },
+  {
+    id: 5,
+    title: "Desert Sunset",
+    images: [
+      "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop", // Wide
+      "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=600&fit=crop", // Vertical
+      "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop", // Wide
+    ],
+  },
+  {
+    id: 6,
+    title: "Urban Architecture",
+    images: [
+      "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&h=600&fit=crop", // Vertical
+      "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&h=600&fit=crop", // Wide
+      "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&h=600&fit=crop", // Vertical
+    ],
+  },
+];
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+export default function Home() {
+  const [selectedPost, setSelectedPost] = useState(0);
+  const [isScrolling, setIsScrolling] = useState(false);
+  const postsContainerRef = useRef<HTMLDivElement>(null);
+
+  // Handle wheel events for horizontal scrolling
+  const handleWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+
+    if (postsContainerRef.current) {
+      const container = postsContainerRef.current;
+      const scrollAmount = e.deltaY;
+
+      // Scroll horizontally based on vertical wheel movement
+      container.scrollLeft += scrollAmount;
+    }
+  };
+
+  // Handle touch/mouse events for horizontal scrolling
+  const handleHorizontalScroll = (e: React.WheelEvent) => {
+    e.preventDefault();
+
+    if (postsContainerRef.current) {
+      const container = postsContainerRef.current;
+      const scrollAmount = e.deltaX;
+
+      container.scrollLeft += scrollAmount;
+    }
+  };
+
+  // Scroll to specific post
+  const scrollToPost = (postIndex: number) => {
+    setSelectedPost(postIndex);
+
+    if (postsContainerRef.current) {
+      const container = postsContainerRef.current;
+      const postWidth = container.scrollWidth / dummyPosts.length;
+      const targetScrollLeft = postIndex * postWidth;
+
+      container.scrollTo({
+        left: targetScrollLeft,
+        behavior: "smooth",
+      });
+    }
+  };
+
+  const handleScroll = () => {
+    if (postsContainerRef.current && !isScrolling) {
+      setIsScrolling(true);
+
+      setTimeout(() => {
+        if (postsContainerRef.current) {
+          const container = postsContainerRef.current;
+          const postWidth = container.scrollWidth / dummyPosts.length;
+          const currentScrollLeft = container.scrollLeft;
+          const newSelectedPost = Math.round(currentScrollLeft / postWidth);
+
+          if (newSelectedPost !== selectedPost) {
+            setSelectedPost(newSelectedPost);
+          }
+        }
+        setIsScrolling(false);
+      }, 150);
+    }
+  };
+
+  useEffect(() => {
+    const container = postsContainerRef.current;
+    if (container) {
+      container.addEventListener("scroll", handleScroll);
+      return () => container.removeEventListener("scroll", handleScroll);
+    }
+  }, [selectedPost]);
+
+  // Add global wheel event listener
+  useEffect(() => {
+    const handleGlobalWheel = (e: WheelEvent) => {
+      if (postsContainerRef.current) {
+        const container = postsContainerRef.current;
+
+        // Handle both vertical and horizontal wheel movement
+        if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+          e.preventDefault();
+          container.scrollLeft += e.deltaY;
+        } else {
+          e.preventDefault();
+          container.scrollLeft += e.deltaX;
+        }
+      }
+    };
+
+    document.addEventListener("wheel", handleGlobalWheel, { passive: false });
+
+    return () => {
+      document.removeEventListener("wheel", handleGlobalWheel);
+    };
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-white">
+      {/* Logo in top left corner */}
+      <div className="absolute top-4 left-4 z-10">
+        <Image
+          src="/logo-mobile.svg"
+          alt="Logo"
+          width={120}
+          height={28}
+          className="h-7 w-auto"
+        />
+      </div>
+
+      <main className="w-full py-8 flex items-center justify-center min-h-screen">
+        <div
+          ref={postsContainerRef}
+          className="flex gap-8 overflow-x-auto scrollbar-hide w-full"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
+          {dummyPosts.map((post, index) => (
+            <div
+              key={post.id}
+              className={`flex-shrink-0 bg-white rounded-lg cursor-pointer transition-all duration-300 ${
+                index === 0
+                  ? "ml-4"
+                  : index === dummyPosts.length - 1
+                  ? "mr-4"
+                  : ""
+              }`}
+              onClick={() => scrollToPost(index)}
+            >
+              {/* Images container */}
+              <div className="flex gap-2 overflow-x-auto">
+                {post.images.map((image, imageIndex) => (
+                  <div key={imageIndex} className="flex-shrink-0">
+                    <Image
+                      src={image}
+                      alt={`${post.title} - Image ${imageIndex + 1}`}
+                      width={0}
+                      height={0}
+                      sizes="50vw"
+                      className="h-[50vh] w-auto object-cover"
+                      style={{ width: "auto" }}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+      <style jsx>{`
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
     </div>
   );
 }

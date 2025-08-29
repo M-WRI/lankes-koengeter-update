@@ -66,31 +66,6 @@ export default function Home() {
   const [isScrolling, setIsScrolling] = useState(false);
   const postsContainerRef = useRef<HTMLDivElement>(null);
 
-  // Handle wheel events for horizontal scrolling
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-
-    if (postsContainerRef.current) {
-      const container = postsContainerRef.current;
-      const scrollAmount = e.deltaY;
-
-      // Scroll horizontally based on vertical wheel movement
-      container.scrollLeft += scrollAmount;
-    }
-  };
-
-  // Handle touch/mouse events for horizontal scrolling
-  const handleHorizontalScroll = (e: React.WheelEvent) => {
-    e.preventDefault();
-
-    if (postsContainerRef.current) {
-      const container = postsContainerRef.current;
-      const scrollAmount = e.deltaX;
-
-      container.scrollLeft += scrollAmount;
-    }
-  };
-
   // Scroll to specific post
   const scrollToPost = (postIndex: number) => {
     setSelectedPost(postIndex);
@@ -135,10 +110,11 @@ export default function Home() {
     }
   }, [selectedPost]);
 
-  // Add global wheel event listener
+  // Add global wheel event listener (desktop only)
   useEffect(() => {
     const handleGlobalWheel = (e: WheelEvent) => {
-      if (postsContainerRef.current) {
+      // Only apply horizontal scrolling on desktop (md and up)
+      if (window.innerWidth >= 768 && postsContainerRef.current) {
         const container = postsContainerRef.current;
 
         // Handle both vertical and horizontal wheel movement
@@ -172,10 +148,10 @@ export default function Home() {
         />
       </div>
 
-      <main className="w-full py-8 flex items-center justify-center min-h-screen">
+      <main className="w-full py-8 px-4 md:px-0 flex items-center justify-center min-h-screen">
         <div
           ref={postsContainerRef}
-          className="flex gap-8 overflow-x-auto scrollbar-hide w-full"
+          className="flex flex-col md:flex-row gap-8 overflow-y-auto md:overflow-x-auto scrollbar-hide w-full"
           style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
         >
           {dummyPosts.map((post, index) => (
@@ -183,15 +159,15 @@ export default function Home() {
               key={post.id}
               className={`flex-shrink-0 bg-white rounded-lg cursor-pointer transition-all duration-300 ${
                 index === 0
-                  ? "ml-4"
+                  ? "ml-0 md:ml-4"
                   : index === dummyPosts.length - 1
-                  ? "mr-4"
+                  ? "mr-0 md:mr-4"
                   : ""
               }`}
               onClick={() => scrollToPost(index)}
             >
               {/* Images container */}
-              <div className="flex gap-2 overflow-x-auto">
+              <div className="flex flex-col md:flex-row gap-2 overflow-y-auto md:overflow-x-auto">
                 {post.images.map((image, imageIndex) => (
                   <div key={imageIndex} className="flex-shrink-0">
                     <Image
@@ -199,9 +175,9 @@ export default function Home() {
                       alt={`${post.title} - Image ${imageIndex + 1}`}
                       width={0}
                       height={0}
-                      sizes="50vw"
-                      className="h-[50vh] w-auto object-cover"
-                      style={{ width: "auto" }}
+                      sizes="100vw"
+                      className="h-auto md:h-[50vh] w-full md:w-auto object-cover"
+                      style={{ width: "100%" }}
                     />
                   </div>
                 ))}

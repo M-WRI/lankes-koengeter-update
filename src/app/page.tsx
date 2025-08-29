@@ -1,78 +1,66 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
+import { useState, useRef, useEffect } from "react";
+import { client } from "@/sanity/lib/client";
+import { urlFor } from "@/sanity/lib/image";
 
-// Dummy data for posts
-const dummyPosts = [
-  {
-    id: 1,
-    title: "Mountain Adventure",
-    images: [
-      "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=600&fit=crop", // Vertical
-      "https://images.unsplash.com/photo-1464822759844-d150baec0134?w=800&h=600&fit=crop", // Wide
-      "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=600&fit=crop", // Vertical
-    ],
-  },
-  {
-    id: 2,
-    title: "City Life",
-    images: [
-      "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800&h=600&fit=crop", // Wide
-      "https://images.unsplash.com/photo-1444723121867-7a241cacace9?w=400&h=600&fit=crop", // Vertical
-      "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800&h=600&fit=crop", // Wide
-    ],
-  },
-  {
-    id: 3,
-    title: "Ocean Views",
-    images: [
-      "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&h=600&fit=crop", // Wide
-      "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=600&fit=crop", // Vertical
-      "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&h=600&fit=crop", // Wide
-    ],
-  },
-  {
-    id: 4,
-    title: "Forest Walk",
-    images: [
-      "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=600&fit=crop", // Vertical
-      "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop", // Wide
-      "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=600&fit=crop", // Vertical
-    ],
-  },
-  {
-    id: 5,
-    title: "Desert Sunset",
-    images: [
-      "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop", // Wide
-      "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=600&fit=crop", // Vertical
-      "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop", // Wide
-    ],
-  },
-  {
-    id: 6,
-    title: "Urban Architecture",
-    images: [
-      "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&h=600&fit=crop", // Vertical
-      "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800&h=600&fit=crop", // Wide
-      "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&h=600&fit=crop", // Vertical
-    ],
-  },
-];
+interface Post {
+  _id: string;
+  title: string;
+  images: Array<{
+    _key: string;
+    asset: {
+      _ref: string;
+      _type: string;
+    };
+    alt?: string;
+    text?: string;
+  }>;
+  publishedAt?: string;
+}
 
 export default function Home() {
+  const [posts, setPosts] = useState<Post[]>([]);
   const [selectedPost, setSelectedPost] = useState(0);
   const [isScrolling, setIsScrolling] = useState(false);
+  const [loading, setLoading] = useState(true);
+
   const postsContainerRef = useRef<HTMLDivElement>(null);
 
-  // Scroll to specific post
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const query = `*[_type == "post"] | order(publishedAt desc) {
+          _id,
+          title,
+          images[] {
+            _key,
+            asset->,
+            alt,
+            text
+          },
+          publishedAt
+        }`;
+
+        const result = await client.fetch<Post[]>(query);
+        setPosts(result);
+      } catch (error) {
+        console.error("Error fetching posts:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPosts();
+  }, []);
+
   const scrollToPost = (postIndex: number) => {
     setSelectedPost(postIndex);
 
-    if (postsContainerRef.current) {
+    if (postsContainerRef.current && posts.length > 0) {
       const container = postsContainerRef.current;
-      const postWidth = container.scrollWidth / dummyPosts.length;
+      const postWidth = container.scrollWidth / posts.length;
       const targetScrollLeft = postIndex * postWidth;
 
       container.scrollTo({
@@ -83,13 +71,13 @@ export default function Home() {
   };
 
   const handleScroll = () => {
-    if (postsContainerRef.current && !isScrolling) {
+    if (postsContainerRef.current && !isScrolling && posts.length > 0) {
       setIsScrolling(true);
 
       setTimeout(() => {
         if (postsContainerRef.current) {
           const container = postsContainerRef.current;
-          const postWidth = container.scrollWidth / dummyPosts.length;
+          const postWidth = container.scrollWidth / posts.length;
           const currentScrollLeft = container.scrollLeft;
           const newSelectedPost = Math.round(currentScrollLeft / postWidth);
 
@@ -108,16 +96,13 @@ export default function Home() {
       container.addEventListener("scroll", handleScroll);
       return () => container.removeEventListener("scroll", handleScroll);
     }
-  }, [selectedPost]);
+  }, [selectedPost, posts.length]);
 
-  // Add global wheel event listener (desktop only)
   useEffect(() => {
     const handleGlobalWheel = (e: WheelEvent) => {
-      // Only apply horizontal scrolling on desktop (md and up)
       if (window.innerWidth >= 768 && postsContainerRef.current) {
         const container = postsContainerRef.current;
 
-        // Handle both vertical and horizontal wheel movement
         if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
           e.preventDefault();
           container.scrollLeft += e.deltaY;
@@ -135,10 +120,22 @@ export default function Home() {
     };
   }, []);
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative">
+            <div className="w-12 h-12 border-4 border-gray-200 rounded-full"></div>
+            <div className="absolute top-0 left-0 w-12 h-12 border-4 border-black rounded-full border-t-transparent animate-spin"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-white">
-      {/* Logo in top left corner */}
-      <div className="absolute top-4 left-4 z-10">
+    <div className="bg-white">
+      <div className="fixed top-4 left-4 z-10">
         <Image
           src="/logo-mobile.svg"
           alt="Logo"
@@ -148,37 +145,75 @@ export default function Home() {
         />
       </div>
 
-      <main className="w-full py-8 px-4 md:px-0 flex items-center justify-center min-h-screen">
+      <main>
         <div
           ref={postsContainerRef}
-          className="flex flex-col md:flex-row gap-8 overflow-y-auto md:overflow-x-auto scrollbar-hide w-full"
-          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          className="md:h-[calc(100vh+50px)] md:translate-y-[-50px] px-4 pb-4 pt-16 md:p-0 w-full flex flex-col md:flex-row gap-[6.5rem] md:gap-[195px] overflow-y-auto md:overflow-x-auto scrollbar-hide"
+          style={{
+            scrollbarWidth: "none",
+            msOverflowStyle: "none",
+            alignItems: "center",
+          }}
         >
-          {dummyPosts.map((post, index) => (
+          {posts.map((post, index) => (
             <div
-              key={post.id}
-              className={`flex-shrink-0 bg-white rounded-lg cursor-pointer transition-all duration-300 ${
+              key={post._id}
+              className={`w-full md:w-auto flex-shrink-0 transition-all duration-300 ${
                 index === 0
                   ? "ml-0 md:ml-4"
-                  : index === dummyPosts.length - 1
-                  ? "mr-0 md:mr-4"
-                  : ""
+                  : index === posts.length - 1
+                    ? "mr-0 md:mr-4"
+                    : ""
               }`}
               onClick={() => scrollToPost(index)}
             >
               {/* Images container */}
-              <div className="flex flex-col md:flex-row gap-2 overflow-y-auto md:overflow-x-auto">
+              <div className="flex flex-col md:flex-row gap-[19.5px]">
                 {post.images.map((image, imageIndex) => (
-                  <div key={imageIndex} className="flex-shrink-0">
-                    <Image
-                      src={image}
-                      alt={`${post.title} - Image ${imageIndex + 1}`}
-                      width={0}
-                      height={0}
-                      sizes="100vw"
-                      className="h-auto md:h-[50vh] w-full md:w-auto object-cover"
-                      style={{ width: "100%" }}
-                    />
+                  <div key={image._key}>
+                    <div className="relative">
+                      <Image
+                        src={urlFor(image).url()}
+                        alt={image.alt || `${post.title} - Image`}
+                        width={0}
+                        height={0}
+                        sizes="100vw"
+                        className="w-full md:w-auto h-auto md:h-[60vh] object-contain"
+                      />
+                      {/* Desktop: Show text underneath each image */}
+                      {image.text && post.title && (
+                        <div className="hidden md:grid gap-[6.5px] absolute top-[calc(60vh+6.5px)] left-0">
+                          <p className="text-[13px] font-bold leading-3">
+                            {post.title}
+                          </p>
+
+                          <p className="text-[13px] text-black break-words">
+                            {image.text}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                    {imageIndex === post.images.length - 1 && (
+                      <div className="md:hidden mt-4">
+                        {post.images.map(
+                          (image) =>
+                            image.text && (
+                              <div
+                                key={`text-${image._key}`}
+                                className="grid gap-[6.5px]"
+                              >
+                                <p className="text-[13px] font-bold leading-3">
+                                  {post.title}
+                                </p>
+
+                                <p className="text-sm text-black break-words">
+                                  {image.text}
+                                </p>
+                              </div>
+                            )
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

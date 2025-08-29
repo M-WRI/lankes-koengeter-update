@@ -1,11 +1,17 @@
 import type { StructureResolver } from "sanity/structure";
+import { orderableDocumentListDeskItem } from "@sanity/orderable-document-list";
 
 // https://www.sanity.io/docs/structure-builder-cheat-sheet
-export const structure: StructureResolver = (S) =>
+export const structure: StructureResolver = (S, context) =>
   S.list()
     .title("Blog")
     .items([
-      S.documentTypeListItem("post").title("Posts"),
+      orderableDocumentListDeskItem({
+        type: "post",
+        title: "Posts",
+        S,
+        context,
+      }),
       S.divider(),
       ...S.documentTypeListItems().filter(
         (item) => item.getId() && !["post"].includes(item.getId()!)

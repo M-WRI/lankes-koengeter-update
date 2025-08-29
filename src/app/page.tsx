@@ -8,6 +8,7 @@ import { urlFor } from "@/sanity/lib/image";
 interface Post {
   _id: string;
   title: string;
+  orderRank: string;
   images: Array<{
     _key: string;
     asset: {
@@ -31,7 +32,7 @@ export default function Home() {
   useEffect(() => {
     const fetchPosts = async () => {
       try {
-        const query = `*[_type == "post"] | order(publishedAt desc) {
+        const query = `*[_type == "post"] | order(orderRank) {
           _id,
           title,
           images[] {
@@ -40,7 +41,8 @@ export default function Home() {
             alt,
             text
           },
-          publishedAt
+          publishedAt,
+          orderRank
         }`;
 
         const result = await client.fetch<Post[]>(query);

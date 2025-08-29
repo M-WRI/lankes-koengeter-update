@@ -1,5 +1,9 @@
 import { DocumentTextIcon } from "@sanity/icons";
 import { defineArrayMember, defineField, defineType } from "sanity";
+import {
+  orderRankField,
+  orderRankOrdering,
+} from "@sanity/orderable-document-list";
 
 export const postType = defineType({
   name: "post",
@@ -12,6 +16,7 @@ export const postType = defineType({
       type: "string",
       title: "Title",
     }),
+    orderRankField({ type: "post" }),
     defineField({
       name: "images",
       type: "array",
@@ -51,4 +56,5 @@ export const postType = defineType({
       return { ...selection };
     },
   },
+  orderings: [orderRankOrdering],
 });

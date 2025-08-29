@@ -16,7 +16,7 @@ export const postType = defineType({
       type: "string",
       title: "Title",
     }),
-    orderRankField({ type: "post" }),
+    orderRankField({ type: "post", newItemPosition: "before" }),
     defineField({
       name: "images",
       type: "array",

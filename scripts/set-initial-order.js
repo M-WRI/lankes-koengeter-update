@@ -4,10 +4,10 @@
 import { createClient } from "@sanity/client";
 
 const client = createClient({
-  projectId: "your-project-id", // Replace with your actual project ID
-  dataset: "production", // Replace with your dataset name
+  projectId: process.env.SANITY_STUDIO_PROJECT_ID, // Replace with your actual project ID
+  dataset: process.env.SANITY_STUDIO_DATASET, // Replace with your dataset name
   apiVersion: "2024-01-01",
-  token: "your-token", // You'll need a token with write permissions
+  token: process.env.SANITY_STUDIO_TOKEN, // You'll need a token with write permissions
   useCdn: false,
 });
 

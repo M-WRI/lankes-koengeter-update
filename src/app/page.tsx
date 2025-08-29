@@ -4,6 +4,8 @@ import Image from "next/image";
 import { useState, useRef, useEffect } from "react";
 import { client } from "@/sanity/lib/client";
 import { urlFor } from "@/sanity/lib/image";
+import { getContacts } from "@/sanity/lib/data";
+import type { Contact } from "@/sanity/lib/types";
 
 interface Post {
   _id: string;
@@ -23,6 +25,7 @@ interface Post {
 
 export default function Home() {
   const [posts, setPosts] = useState<Post[]>([]);
+  const [contacts, setContacts] = useState<Contact[]>([]);
   const [selectedPost, setSelectedPost] = useState(0);
   const [isScrolling, setIsScrolling] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -30,9 +33,10 @@ export default function Home() {
   const postsContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const fetchPosts = async () => {
+    const fetchData = async () => {
       try {
-        const query = `*[_type == "post"] | order(orderRank) {
+        // Fetch posts
+        const postsQuery = `*[_type == "post"] | order(orderRank) {
           _id,
           title,
           images[] {
@@ -45,16 +49,21 @@ export default function Home() {
           orderRank
         }`;
 
-        const result = await client.fetch<Post[]>(query);
-        setPosts(result);
+        const [postsResult, contactsResult] = await Promise.all([
+          client.fetch<Post[]>(postsQuery),
+          getContacts(),
+        ]);
+
+        setPosts(postsResult);
+        setContacts(contactsResult);
       } catch (error) {
-        console.error("Error fetching posts:", error);
+        console.error("Error fetching data:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchPosts();
+    fetchData();
   }, []);
 
   const scrollToPost = (postIndex: number) => {
@@ -146,6 +155,25 @@ export default function Home() {
           className="h-7 w-auto"
         />
       </div>
+
+      {contacts.length > 0 && (
+        <div className="hidden md:block fixed bottom-4 right-4 z-10">
+          <div className="flex flex-row-reverse items-center gap-2 text-[14px] text-black">
+            {contacts.map((contact, index) => (
+              <div key={contact._id} className="flex items-center">
+                <a
+                  href={contact.link}
+                  className="hover:underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {contact.title}
+                </a>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <main>
         <div

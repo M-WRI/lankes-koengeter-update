@@ -32,7 +32,6 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
 
   const postsContainerRef = useRef<HTMLDivElement>(null);
-  const logoRef = useRef<HTMLDivElement>(null);
   const contactRef = useRef<HTMLDivElement>(null);
   const postsRefs = useRef<(HTMLDivElement | null)[]>([]);
   const imagesRefs = useRef<(HTMLDivElement | null)[][]>([]);
@@ -75,8 +74,18 @@ export default function Home() {
   // GSAP Animation Effect
   useEffect(() => {
     if (!loading && posts.length > 0) {
+      // Animate the overlay away when the page loads
+      const overlay = document.querySelector("[data-overlay]");
+      if (overlay) {
+        gsap.to(overlay, {
+          width: "0%",
+          duration: 0.4,
+          ease: "power2.inOut",
+        });
+      }
+
       // Set initial opacity to 0 for all elements
-      gsap.set([logoRef.current, contactRef.current, ...postsRefs.current], {
+      gsap.set([contactRef.current], {
         opacity: 0,
         y: 20,
       });
@@ -88,19 +97,10 @@ export default function Home() {
       });
 
       // Animate logo, contact, and posts all at the same time
-      gsap.to([logoRef.current, contactRef.current], {
+      gsap.to([contactRef.current], {
         opacity: 1,
         y: 0,
         duration: 0.8,
-        ease: "power2.in",
-      });
-
-      gsap.to(postsRefs.current, {
-        opacity: 1,
-        y: 0,
-        duration: 1,
-        stagger: 0.8,
-        ease: "back.in",
       });
 
       // Animate images and text within each post
@@ -109,23 +109,20 @@ export default function Home() {
           const postImages = imagesRefs.current[postIndex] || [];
           const postTexts = textRefs.current[postIndex] || [];
 
-          // Animate images first, then text - start right after post appears
           gsap.to(postImages, {
             opacity: 1,
             y: 0,
             duration: 0.8,
-            stagger: 0.4,
-            ease: "back.in",
-            delay: 0.4 + postIndex * 0.4, // Start after each post appears
+            stagger: 0.2,
+            delay: 0.2 + postIndex * 0.4,
           });
 
           gsap.to(postTexts, {
             opacity: 1,
             y: 0,
             duration: 0.8,
-            stagger: 0.4,
-            ease: "back.in",
-            delay: 1 + postIndex * 0.4, // Start after images begin
+            stagger: 0.2,
+            delay: 0.6 + postIndex * 0.4,
           });
         }
       });
@@ -212,16 +209,6 @@ export default function Home() {
 
   return (
     <div className="bg-white">
-      <div ref={logoRef} className="fixed top-4 left-4 z-10">
-        <Image
-          src="/logo-mobile.svg"
-          alt="Logo"
-          width={120}
-          height={28}
-          className="h-7 w-auto"
-        />
-      </div>
-
       {contacts.length > 0 && (
         <div
           ref={contactRef}

@@ -6,6 +6,7 @@ import { client } from "@/sanity/lib/client";
 import { urlFor } from "@/sanity/lib/image";
 import { getContacts } from "@/sanity/lib/data";
 import type { Contact } from "@/sanity/lib/types";
+import { gsap } from "gsap";
 
 interface Post {
   _id: string;
@@ -31,6 +32,11 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
 
   const postsContainerRef = useRef<HTMLDivElement>(null);
+  const logoRef = useRef<HTMLDivElement>(null);
+  const contactRef = useRef<HTMLDivElement>(null);
+  const postsRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const imagesRefs = useRef<(HTMLDivElement | null)[][]>([]);
+  const textRefs = useRef<(HTMLDivElement | null)[][]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -65,6 +71,66 @@ export default function Home() {
 
     fetchData();
   }, []);
+
+  // GSAP Animation Effect
+  useEffect(() => {
+    if (!loading && posts.length > 0) {
+      // Set initial opacity to 0 for all elements
+      gsap.set([logoRef.current, contactRef.current, ...postsRefs.current], {
+        opacity: 0,
+        y: 20,
+      });
+
+      // Set initial state for images and text
+      gsap.set([...imagesRefs.current.flat(), ...textRefs.current.flat()], {
+        opacity: 0,
+        y: 15,
+      });
+
+      // Animate logo, contact, and posts all at the same time
+      gsap.to([logoRef.current, contactRef.current], {
+        opacity: 1,
+        y: 0,
+        duration: 0.8,
+        ease: "power2.in",
+      });
+
+      gsap.to(postsRefs.current, {
+        opacity: 1,
+        y: 0,
+        duration: 1,
+        stagger: 0.8,
+        ease: "back.in",
+      });
+
+      // Animate images and text within each post
+      postsRefs.current.forEach((postRef, postIndex) => {
+        if (postRef) {
+          const postImages = imagesRefs.current[postIndex] || [];
+          const postTexts = textRefs.current[postIndex] || [];
+
+          // Animate images first, then text - start right after post appears
+          gsap.to(postImages, {
+            opacity: 1,
+            y: 0,
+            duration: 0.8,
+            stagger: 0.4,
+            ease: "back.in",
+            delay: 0.4 + postIndex * 0.4, // Start after each post appears
+          });
+
+          gsap.to(postTexts, {
+            opacity: 1,
+            y: 0,
+            duration: 0.8,
+            stagger: 0.4,
+            ease: "back.in",
+            delay: 1 + postIndex * 0.4, // Start after images begin
+          });
+        }
+      });
+    }
+  }, [loading, posts.length]);
 
   const scrollToPost = (postIndex: number) => {
     setSelectedPost(postIndex);
@@ -146,7 +212,7 @@ export default function Home() {
 
   return (
     <div className="bg-white">
-      <div className="fixed top-4 left-4 z-10">
+      <div ref={logoRef} className="fixed top-4 left-4 z-10">
         <Image
           src="/logo-mobile.svg"
           alt="Logo"
@@ -157,7 +223,10 @@ export default function Home() {
       </div>
 
       {contacts.length > 0 && (
-        <div className="hidden md:block fixed bottom-4 right-4 z-10">
+        <div
+          ref={contactRef}
+          className="hidden md:block fixed bottom-4 right-4 z-10"
+        >
           <div className="flex flex-row-reverse items-center gap-2 text-[14px] text-black">
             {contacts.map((contact, index) => (
               <div key={contact._id} className="flex items-center">
@@ -188,6 +257,9 @@ export default function Home() {
           {posts.map((post, index) => (
             <div
               key={post._id}
+              ref={(el) => {
+                postsRefs.current[index] = el;
+              }}
               className={`w-full md:w-auto flex-shrink-0 transition-all duration-300 ${
                 index === 0
                   ? "ml-0 md:ml-4"
@@ -200,7 +272,23 @@ export default function Home() {
               {/* Images container */}
               <div className="flex flex-col md:flex-row gap-[19.5px]">
                 {post.images.map((image, imageIndex) => (
-                  <div key={image._key}>
+                  <div
+                    key={image._key}
+                    ref={(el) => {
+                      if (
+                        !imagesRefs.current[
+                          posts.findIndex((p) => p._id === post._id)
+                        ]
+                      ) {
+                        imagesRefs.current[
+                          posts.findIndex((p) => p._id === post._id)
+                        ] = [];
+                      }
+                      imagesRefs.current[
+                        posts.findIndex((p) => p._id === post._id)
+                      ][imageIndex] = el;
+                    }}
+                  >
                     <div className="relative">
                       <Image
                         src={urlFor(image).url()}
@@ -212,7 +300,23 @@ export default function Home() {
                       />
                       {/* Desktop: Show text underneath each image */}
                       {image.text && post.title && (
-                        <div className="hidden md:grid gap-[6.5px] absolute top-[calc(60vh+6.5px)] left-0">
+                        <div
+                          ref={(el) => {
+                            if (
+                              !textRefs.current[
+                                posts.findIndex((p) => p._id === post._id)
+                              ]
+                            ) {
+                              textRefs.current[
+                                posts.findIndex((p) => p._id === post._id)
+                              ] = [];
+                            }
+                            textRefs.current[
+                              posts.findIndex((p) => p._id === post._id)
+                            ][imageIndex] = el;
+                          }}
+                          className="hidden md:grid gap-[6.5px] absolute top-[calc(60vh+6.5px)] left-0"
+                        >
                           <p className="text-[13px] font-bold leading-3">
                             {post.title}
                           </p>
@@ -226,10 +330,26 @@ export default function Home() {
                     {imageIndex === post.images.length - 1 && (
                       <div className="md:hidden mt-4">
                         {post.images.map(
-                          (image) =>
+                          (image, mobileTextIndex) =>
                             image.text && (
                               <div
                                 key={`text-${image._key}`}
+                                ref={(el) => {
+                                  if (
+                                    !textRefs.current[
+                                      posts.findIndex((p) => p._id === post._id)
+                                    ]
+                                  ) {
+                                    textRefs.current[
+                                      posts.findIndex((p) => p._id === post._id)
+                                    ] = [];
+                                  }
+                                  const textIndex =
+                                    imageIndex + mobileTextIndex + 1;
+                                  textRefs.current[
+                                    posts.findIndex((p) => p._id === post._id)
+                                  ][textIndex] = el;
+                                }}
                                 className="grid gap-[6.5px]"
                               >
                                 <p className="text-[13px] font-bold leading-3">

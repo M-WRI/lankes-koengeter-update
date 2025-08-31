@@ -21,7 +21,9 @@ export interface Information {
 export interface Post {
   _id: string;
   title: string;
-  images?: Array<{
+  orderRank: string;
+  images: Array<{
+    _key: string;
     asset: {
       _ref: string;
       _type: string;

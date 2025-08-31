@@ -24,16 +24,15 @@ export const informationQuery = groq`
   }
 `;
 
-// Post queries (existing)
-export const postsQuery = groq`
-  *[_type == "post"] | order(orderRank) {
-    _id,
-    title,
-    images[] {
-      asset->,
-      alt,
-      text
-    },
-    publishedAt
-  }
-`;
+export const postsQuery = groq`*[_type == "post"] | order(orderRank) {
+  _id,
+  title,
+  images[] {
+    _key,
+    asset->,
+    alt,
+    text
+  },
+  publishedAt,
+  orderRank
+}`;

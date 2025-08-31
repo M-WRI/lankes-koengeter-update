@@ -58,7 +58,7 @@ export default function AboutUs() {
           <button
             key={item._id}
             onClick={() => scrollToSection(item.id)}
-            className="text-[13px] cursor-pointer hover:underline"
+            className="cursor-pointer hover:underline"
           >
             {item.title}
           </button>
@@ -79,7 +79,7 @@ export default function AboutUs() {
                 className="space-y-6 h-screen flex flex-col justify-center items-center"
                 id={item.id}
               >
-                <span className="text-[13px]">
+                <span>
                   {item.contentBlocks.map((block, index) => (
                     <span key={index}>
                       {block.title ? (

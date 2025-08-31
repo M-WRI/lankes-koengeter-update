@@ -41,7 +41,7 @@ export const NavBar = ({
       gsap.to([logoRef.current], {
         opacity: 1,
         y: 0,
-        duration: 0.8,
+        duration: 1.2,
       });
     }
   }, [startAnimation]);
@@ -50,7 +50,7 @@ export const NavBar = ({
     <div>
       <div
         ref={logoRef}
-        className="fixed top-4 left-4 right-4 z-20 flex justify-between items-center gap-2 mix-blend-difference"
+        className="opacity-0 fixed top-4 left-4 right-4 z-20 flex justify-between items-center gap-2 mix-blend-difference"
       >
         <Image
           src="/logo-mobile.svg"

@@ -1,10 +1,31 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { gsap } from "gsap";
+import { getInformation } from "@/sanity/lib/data";
+import { useRouter } from "next/navigation";
+import type { Information } from "@/sanity/lib/types";
 
-export default function Information() {
+export default function AboutUs() {
+  const navigate = useRouter();
+  const [information, setInformation] = useState<Information[]>([]);
+  const [loading, setLoading] = useState(true);
   const contentRef = useRef<HTMLDivElement>(null);
+  const sectionRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+
+  useEffect(() => {
+    const fetchInformation = async () => {
+      try {
+        const data = await getInformation();
+        setInformation(data || []);
+      } catch (error) {
+        console.error("Error fetching information:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchInformation();
+  }, []);
 
   useEffect(() => {
     // Animate the overlay away when the page loads
@@ -16,69 +37,64 @@ export default function Information() {
         ease: "power2.inOut",
       });
     }
-
-    // Set initial opacity to 0 for content
-    gsap.set([contentRef.current], {
-      opacity: 0,
-      y: 20,
-    });
-
-    // Animate content in
-    gsap.to([contentRef.current], {
-      opacity: 1,
-      y: 0,
-      duration: 0.8,
-    });
   }, []);
+
+  const scrollToSection = (sectionId: string) => {
+    navigate.push(`#${sectionId}`);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-lg text-gray-600">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white">
+      <nav className="fixed z-50 top-[22px] right-12 w-full flex justify-end gap-4">
+        {information.map((item) => (
+          <button
+            key={item._id}
+            onClick={() => scrollToSection(item.id)}
+            className="text-[13px] cursor-pointer hover:underline"
+          >
+            {item.title}
+          </button>
+        ))}
+      </nav>
       <div className="pt-20 px-4">
-        <div ref={contentRef} className="max-w-4xl mx-auto">
-          <h1 className="text-4xl font-bold mb-8 text-black">Information</h1>
-
-          <div className="prose prose-lg max-w-none text-black">
-            <p className="text-lg mb-6">
-              Welcome to our information page. This is where you can find
-              important details about our work, services, and contact
-              information.
-            </p>
-
-            <div className="grid md:grid-cols-2 gap-8 mt-12">
-              <div>
-                <h2 className="text-2xl font-semibold mb-4">About Us</h2>
-                <p className="text-gray-700">
-                  We are dedicated to creating meaningful experiences through
-                  design and technology. Our team works collaboratively to
-                  deliver innovative solutions that meet the needs of our
-                  clients and users.
-                </p>
+        <div className="max-w-6xl mx-auto">
+          <div
+            ref={contentRef}
+            className="prose prose-lg max-w-none text-black space-y-12"
+          >
+            {information.map((item) => (
+              <div
+                key={item._id}
+                ref={(el) => {
+                  sectionRefs.current[item._id] = el;
+                }}
+                className="space-y-6 h-screen flex flex-col justify-center items-center"
+                id={item.id}
+              >
+                <span className="text-[13px]">
+                  {item.contentBlocks.map((block, index) => (
+                    <span key={index}>
+                      {block.title ? (
+                        <span>
+                          <strong>{block.title}</strong> {block.text}
+                        </span>
+                      ) : (
+                        <span>{block.text}</span>
+                      )}
+                      {index < item.contentBlocks.length - 1 && " "}
+                    </span>
+                  ))}
+                </span>
               </div>
-
-              <div>
-                <h2 className="text-2xl font-semibold mb-4">Services</h2>
-                <ul className="list-disc list-inside text-gray-700 space-y-2">
-                  <li>Web Design & Development</li>
-                  <li>User Experience Design</li>
-                  <li>Brand Identity</li>
-                  <li>Digital Strategy</li>
-                  <li>Content Creation</li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="mt-12">
-              <h2 className="text-2xl font-semibold mb-4">Contact</h2>
-              <p className="text-gray-700 mb-4">
-                Get in touch with us to discuss your project or learn more about
-                our services.
-              </p>
-              <div className="space-y-2 text-gray-700">
-                <p>Email: info@example.com</p>
-                <p>Phone: +1 (555) 123-4567</p>
-                <p>Address: 123 Design Street, Creative City, CC 12345</p>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
       </div>

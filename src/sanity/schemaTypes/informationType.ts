@@ -16,6 +16,14 @@ export const informationType = defineType({
       validation: (Rule) => Rule.required(),
     }),
     defineField({
+      name: "id",
+      type: "string",
+      title: "ID",
+      description:
+        "The ID for this information section (e.g., 'about-us', 'services', 'company-info')",
+      validation: (Rule) => Rule.required(),
+    }),
+    defineField({
       name: "contentBlocks",
       type: "array",
       title: "Content Blocks",

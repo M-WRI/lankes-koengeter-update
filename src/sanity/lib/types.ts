@@ -12,6 +12,7 @@ export interface InformationContentBlock {
 
 export interface Information {
   _id: string;
+  id: string;
   title: string;
   contentBlocks: InformationContentBlock[];
   publishedAt?: string;

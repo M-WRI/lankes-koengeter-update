@@ -12,9 +12,10 @@ export const contactQuery = groq`
 
 // Information queries
 export const informationQuery = groq`
-  *[_type == "information"][0] {
+  *[_type == "information"] {
     _id,
     title,
+    id,
     contentBlocks[] {
       title,
       text

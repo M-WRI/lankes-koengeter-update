@@ -6,7 +6,7 @@ export async function getContacts(): Promise<Contact[]> {
   return client.fetch(contactQuery);
 }
 
-export async function getInformation(): Promise<Information | null> {
+export async function getInformation(): Promise<Information[]> {
   return client.fetch(informationQuery);
 }
 

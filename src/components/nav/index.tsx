@@ -20,7 +20,6 @@ export const NavBar = ({
       width: "100%",
       duration: 0.4,
       onComplete: () => {
-        // Toggle between home and information pages
         if (pathname === "/about-us") {
           router.push("/");
         } else {

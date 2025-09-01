@@ -1,5 +1,9 @@
 import { DocumentIcon } from "@sanity/icons";
 import { defineArrayMember, defineField, defineType } from "sanity";
+import {
+  orderRankField,
+  orderRankOrdering,
+} from "@sanity/orderable-document-list";
 
 export const informationType = defineType({
   name: "information",
@@ -15,6 +19,7 @@ export const informationType = defineType({
         "The title for this information section (e.g., 'About Us', 'Services', 'Company Info')",
       validation: (Rule) => Rule.required(),
     }),
+    orderRankField({ type: "information", newItemPosition: "before" }),
     defineField({
       name: "id",
       type: "string",
@@ -86,4 +91,5 @@ export const informationType = defineType({
       };
     },
   },
+  orderings: [orderRankOrdering],
 });

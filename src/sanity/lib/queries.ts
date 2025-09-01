@@ -12,7 +12,7 @@ export const contactQuery = groq`
 
 // Information queries
 export const informationQuery = groq`
-  *[_type == "information"] {
+  *[_type == "information"] | order(orderRank) {
     _id,
     title,
     id,
@@ -20,7 +20,8 @@ export const informationQuery = groq`
       title,
       text
     },
-    publishedAt
+    publishedAt,
+    orderRank
   }
 `;
 

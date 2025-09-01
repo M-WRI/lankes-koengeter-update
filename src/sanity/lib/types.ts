@@ -16,6 +16,7 @@ export interface Information {
   title: string;
   contentBlocks: InformationContentBlock[];
   publishedAt?: string;
+  orderRank: string;
 }
 
 export interface Post {

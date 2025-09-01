@@ -10,6 +10,7 @@ export default function AboutUs() {
   const navigate = useRouter();
   const [information, setInformation] = useState<Information[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeSection, setActiveSection] = useState<string>("");
   const contentRef = useRef<HTMLDivElement>(null);
   const sectionRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
@@ -39,9 +40,70 @@ export default function AboutUs() {
     }
   }, []);
 
-  const scrollToSection = (sectionId: string) => {
-    navigate.push(`#${sectionId}`);
-  };
+  // Set dynamic height for sections
+  useEffect(() => {
+    if (information.length === 0) return;
+
+    const setSectionHeights = () => {
+      Object.values(sectionRefs.current).forEach((section) => {
+        if (section) {
+          const contentHeight = section.scrollHeight;
+          const viewportHeight = window.innerHeight;
+
+          // Set height to 100vh if content fits, otherwise use content height
+          if (contentHeight <= viewportHeight) {
+            section.style.height = "100vh";
+          } else {
+            section.style.height = `${contentHeight}px`;
+          }
+        }
+      });
+    };
+
+    // Set heights after content is rendered
+    const timer = setTimeout(setSectionHeights, 100);
+
+    // Also set heights on window resize
+    window.addEventListener("resize", setSectionHeights);
+
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", setSectionHeights);
+    };
+  }, [information]);
+
+  // Set up Intersection Observer for active section detection
+  useEffect(() => {
+    if (information.length === 0) return;
+
+    const observerOptions = {
+      root: null,
+      rootMargin: "-50% 0px -50% 0px", // Section is active when it's in the center 50% of viewport
+      threshold: 0,
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          const sectionId = entry.target.getAttribute("data-section-id");
+          if (sectionId) {
+            setActiveSection(sectionId);
+          }
+        }
+      });
+    }, observerOptions);
+
+    // Observe all sections
+    Object.values(sectionRefs.current).forEach((ref) => {
+      if (ref) {
+        observer.observe(ref);
+      }
+    });
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [information]);
 
   if (loading) {
     return (
@@ -52,52 +114,79 @@ export default function AboutUs() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <nav className="fixed z-50 top-[22px] right-12 w-full flex justify-end gap-4">
+    <div className="bg-white">
+      <InformationNavigation
+        information={information}
+        activeSection={activeSection}
+        sectionRefs={sectionRefs}
+      />
+      <div ref={contentRef}>
         {information.map((item) => (
-          <button
-            key={item._id}
-            onClick={() => scrollToSection(item.id)}
-            className="cursor-pointer hover:underline"
-          >
-            {item.title}
-          </button>
-        ))}
-      </nav>
-      <div className="pt-20 px-4">
-        <div className="max-w-6xl mx-auto">
           <div
-            ref={contentRef}
-            className="prose prose-lg max-w-none text-black space-y-12"
+            key={item._id}
+            ref={(el) => {
+              sectionRefs.current[item._id] = el;
+            }}
+            data-section-id={item._id}
+            className="min-h-screen flex items-center justify-center px-8"
+            id={item.id}
           >
-            {information.map((item) => (
-              <div
-                key={item._id}
-                ref={(el) => {
-                  sectionRefs.current[item._id] = el;
-                }}
-                className="space-y-6 h-screen flex flex-col justify-center items-center"
-                id={item.id}
-              >
-                <span>
-                  {item.contentBlocks.map((block, index) => (
-                    <span key={index}>
-                      {block.title ? (
-                        <span>
-                          <strong>{block.title}</strong> {block.text}
-                        </span>
-                      ) : (
-                        <span>{block.text}</span>
-                      )}
-                      {index < item.contentBlocks.length - 1 && " "}
+            <span>
+              {item.contentBlocks.map((block, index) => (
+                <span key={index}>
+                  {block.title ? (
+                    <span>
+                      <strong>{block.title}</strong> {block.text}
                     </span>
-                  ))}
+                  ) : (
+                    <span>{block.text}</span>
+                  )}
+                  {index < item.contentBlocks.length - 1 && " "}
                 </span>
-              </div>
-            ))}
+              ))}
+            </span>
           </div>
-        </div>
+        ))}
       </div>
     </div>
   );
 }
+
+export const InformationNavigation = ({
+  information,
+  activeSection,
+  sectionRefs,
+}: {
+  information: Information[];
+  activeSection: string;
+  sectionRefs: React.RefObject<{ [key: string]: HTMLDivElement | null }>;
+}) => {
+  const scrollToSection = (sectionId: string) => {
+    const section = sectionRefs.current[sectionId];
+    if (section) {
+      section.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+  };
+  return (
+    <div className="fixed z-50 top-[14px] right-12">
+      <div className="bg-white px-4 py-2 rounded-md flex gap-4">
+        {information.map((item) => (
+          <button
+            key={item._id}
+            onClick={() => scrollToSection(item._id)}
+            className={`cursor-pointer transition-all duration-300 ${
+              activeSection === item._id
+                ? "text-black underline"
+                : "text-black hover:underline"
+            }`}
+          >
+            {item.title}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};

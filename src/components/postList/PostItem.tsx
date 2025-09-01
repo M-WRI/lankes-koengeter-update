@@ -71,8 +71,28 @@ export const PostItem = ({
           width={0}
           height={0}
           sizes="100vw"
-          className="w-full md:w-auto h-auto md:h-[60vh] object-contain"
+          className="w-full sm:w-auto h-auto sm:h-[40vh] md:h-[60vh] object-contain"
         />
+        {/* Mobile wide screen: Show text next to image */}
+        {image.text && post.title && (
+          <div
+            ref={(el) => {
+              if (
+                !textRefs.current[posts.findIndex((p) => p._id === post._id)]
+              ) {
+                textRefs.current[posts.findIndex((p) => p._id === post._id)] =
+                  [];
+              }
+              textRefs.current[posts.findIndex((p) => p._id === post._id)][
+                imageIndex
+              ] = el;
+            }}
+            className="hidden sm:grid md:hidden gap-[6.5px] absolute top-0 left-[calc(100%+12px)] w-48"
+          >
+            <p className="font-bold leading-3">{post.title}</p>
+            <p className="text-sm text-black break-words">{image.text}</p>
+          </div>
+        )}
         {/* Desktop: Show text underneath each image */}
         {image.text && post.title && (
           <div
@@ -90,13 +110,12 @@ export const PostItem = ({
             className="hidden md:grid gap-[6.5px] absolute top-[calc(60vh+6.5px)] left-0"
           >
             <p className="font-bold leading-3">{post.title}</p>
-
             <p className="text-black break-words">{image.text}</p>
           </div>
         )}
       </div>
       {imageIndex === post.images.length - 1 && (
-        <div className="md:hidden mt-4">
+        <div className="sm:hidden mt-4">
           {post.images.map(
             (image, mobileTextIndex) =>
               image.text && (
